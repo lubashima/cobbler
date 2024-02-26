@@ -7,11 +7,13 @@ import re
 
 from utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, process_generation, call_guidance, guidance_models
 from utils import guidance_uniform_chat_compassion, guidance_uniform_completion_compassion, uniform_prompt_func_compassion
-from utils import v_models, get_model_output
+from utils import v_models, get_model_output, check_result_dir
 
 random.seed(939)
 
 def evaluate_compassion(N, evaluator, instructions, reference, responses, eval_gen):
+    results_dir = f"n15_evaluations_compassion"
+    check_result_dir(results_dir)
     true_order = f"n15_evaluations_compassion/nC2_true_order_{evaluator}.json"
     preferences = f"n15_evaluations_compassion/nC2_preferences_{evaluator}.json"
     stats = f"n15_evaluations_compassion/nC2_statistics_{evaluator}.json"
@@ -141,7 +143,8 @@ def evaluate_compassion(N, evaluator, instructions, reference, responses, eval_g
         total_comparisons = N * comb(len(keys), 2)
         wr.write("First order percentage: " + str(first_order_bias / total_comparisons) + "\n")
         wr.write("Last order percentage: " + str(last_order_bias / total_comparisons) + "\n")
-        wr.write("Me bias (for compassion): " + str(me_bias / me_compared) + "\n")    
+        if me_compared:
+            wr.write("Me bias (for compassion): " + str(me_bias / me_compared) + "\n")    
         wr.write("Valid response percentage: " + str(valid_responses / total_comparisons) + "\n") 
         wr.write("Valid responses: " + str(valid_responses) + "\n")      
         wr.write("Consistency percentage: " + str(consistency / total_comparisons) + "\n")

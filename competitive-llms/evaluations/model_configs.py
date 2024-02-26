@@ -11,5 +11,6 @@ model_configs = {
     "openassist": "../competitive-llms/configs/open_assist_llm_example.yml",
     "redpajama": "../competitive-llms/configs/redpajama_llm_example.yml",
     "vicuna": "../competitive-llms/configs/vicuna_llm_7b_example.yml",
-    "wizardlm": "../competitive-llms/configs/wizard_llm_example.yml"
+    "wizardlm": "../competitive-llms/configs/wizard_llm_example.yml",
+    'huggingface': "../competitive-llms/configs/huggingface_llm_example.yaml"
 }

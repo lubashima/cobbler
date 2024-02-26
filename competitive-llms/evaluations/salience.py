@@ -1,9 +1,11 @@
 import sys
+import os
 
 import nltk
 nltk.download('punkt')
 
 from nltk.tokenize import word_tokenize
+from utils import check_result_dir
 
 import json
 
@@ -92,24 +94,34 @@ def extract_valid_responses(path):
     return None
 
 def evaluate_salience(model, mode="nC2"):
+    print(mode)
     if mode == "size":
+        result_dir = f"n15_evaluations_order/_size/"
+        check_result_dir(result_dir)
         print(model)
         stats_path = f'n15_evaluations_order/_size/nC2_statistics_{model}.json'
         valid_responses = extract_valid_responses(stats_path)
         to_path = f'n15_evaluations_order/_size/nC2_true_order_{model}.json'
         if 'llamav2' in model:
-            responses = read_json_file("/home/kooryan/competitive-llms/n15_responses/full_n15_model_generations_llamav2.json")[0]
+            responses = read_json_file(os.path.join(os.path.realpath(__file__), "../n15_responses/full_n15_model_generations_llamav2.json"))[0]
         else:
-            responses = read_json_file("/home/kooryan/competitive-llms/n15_responses/full_n15_model_generations_llamav2.json")[0]
+            responses = read_json_file(os.path.join(os.path.realpath(__file__), "../n15_responses/full_n15_model_generations_llamav2.json"))[0]
     else:
-        stats_path = f'n15_evaluations_order/_official/{model}/{mode}_statistics_{model}.json'
+        result_dir = f"n15_evaluations_order/_official/"
+        check_result_dir(result_dir)
+        # stats_path = f'n15_evaluations_order/_official/{model}/{mode}_statistics_{model}.json'
+        stats_path = f'n15_evaluations_order/{mode}_statistics_{model}.json'
         valid_responses = extract_valid_responses(stats_path)
-        responses = read_json_file("/home/kooryan/competitive-llms/n15_responses/full_n15_model_generations.json")[0]
+        this_file_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
+        responses = read_json_file(os.path.join(this_file_path, "../n15_responses/full_n15_model_generations.json"))[0]
         
-        to_path = f'n15_evaluations_order/_official/{model}/{mode}_true_order_{model}.json'
-    pairs = organize_data(to_path)    
+        to_path = f'n15_evaluations_order/{mode}_true_order_{model}.json'
+        check_result_dir(os.path.join(this_file_path, '..', f'n15_evaluations_order/_official/{model}/'))
+    pairs = organize_data(os.path.join(this_file_path, '..', to_path))    
     lb = find_length_bias(pairs, responses)
 
+    storage_dir = f'n15_evaluations_salience'
+    check_result_dir(os.path.join(this_file_path, '..', storage_dir))
     with open(f'n15_evaluations_salience/{model}_salience_bias.json', "w") as lob:
         valid = lb[0]
         short = lb[1]

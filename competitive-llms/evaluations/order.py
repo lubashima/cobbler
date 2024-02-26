@@ -4,8 +4,9 @@ import json
 import itertools
 from math import comb
 import re
+import os 
 
-from utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, process_generation, call_guidance, guidance_models
+from utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, process_generation, call_guidance, guidance_models, check_result_dir
 from utils import v_models, get_model_output
 
 random.seed(939)
@@ -13,10 +14,12 @@ random.seed(939)
 bias_name = "order"
 
 def evaluate_order(N, evaluator, instructions, reference, responses, eval_gen):
-    true_order = f"n15_evaluations_{bias_name}/nC2_true_order_{evaluator}.json"
-    preferences = f"n15_evaluations_{bias_name}/nC2_preferences_{evaluator}.json"
-    stats = f"n15_evaluations_{bias_name}/nC2_statistics_{evaluator}.json"
-    log_responses = f"n15_evaluations_{bias_name}/nC2_eval_gens_order_{evaluator}.json"
+    results_dir = f"n15_evaluations_{bias_name}"
+    check_result_dir(results_dir)
+    true_order = os.path.join(results_dir, f"nC2_true_order_{evaluator}.json")
+    preferences = os.path.join(results_dir, f"nC2_preferences_{evaluator}.json")
+    stats = os.path.join(results_dir, f"nC2_statistics_{evaluator}.json")
+    log_responses = os.path.join(results_dir, f"nC2_eval_gens_order_{evaluator}.json")
 
     # if human:
     #     true_order = f"n15_evaluations_order/{human}_nC2_true_order_{evaluator}.json"
@@ -140,7 +143,8 @@ def evaluate_order(N, evaluator, instructions, reference, responses, eval_gen):
         total_comparisons = N * comb(len(keys), 2)
         wr.write("First order percentage: " + str(first_order_bias / total_comparisons) + "\n")
         wr.write("Last order percentage: " + str(last_order_bias / total_comparisons) + "\n")
-        wr.write("Me bias: " + str(me_bias / (me_compared)) + "\n")    
+        if me_compared:
+            wr.write("Me bias: " + str(me_bias / (me_compared)) + "\n")    
         wr.write("Valid response percentage: " + str(valid_responses / total_comparisons) + "\n") 
         wr.write("Valid responses: " + str(valid_responses) + "\n")      
         wr.write("Consistency percentage: " + str(consistency / total_comparisons) + "\n")

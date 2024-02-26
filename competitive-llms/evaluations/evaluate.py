@@ -42,11 +42,10 @@ models = ["chatgpt", "instructgpt", "gpt4",
     "cohere", "llama", "falcon",
     "openassist", "dolly", "alpaca", "baize",
     "redpajama", "koala", "vicuna", "wizardlm", "mpt",
-    "random"
+    "random", 'huggingface'
     ]
 
 def evaluate_nC2(evaluator, instructions, reference, responses, human, bias_mode="order"):
-    print(f"evaluating with {evaluator}")
     if evaluator != "all" and evaluator != "random":
         if evaluator not in guidance_models:
             config_path = model_configs[evaluator]
@@ -101,7 +100,7 @@ def main(batch, bias):
     if batch == 0:
         evaluators = ["all"]
     if batch == 4:
-        evaluators = ["random"]
+        evaluators = ["huggingface"]
     
     print(batch)
     if batch == 1:

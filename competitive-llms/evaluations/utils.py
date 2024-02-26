@@ -6,8 +6,14 @@ from tenacity import (
     wait_random_exponential,
 )  # for exponential backoff
 x=5
+import os 
 
 v_models = ["llama", "falcon", "mpt", "llamav2", "llamav2-13b", "llamav2-7b", "vicuna-33b-v1.3"]
+
+def check_result_dir(result_dir):
+    if not os.path.isdir(result_dir):
+        os.makedirs(result_dir)
+    return
 
 def get_model_output(evaluator, pipeline, prompt):
     if evaluator in v_models:

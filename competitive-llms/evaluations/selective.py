@@ -4,15 +4,18 @@ import json
 import itertools
 from math import comb
 import re
+import os
 
 from utils import uniform_prompt_selective, guidance_uniform_chat_selective, guidance_uniform_completion_selective
-from utils import v_models, get_model_output, guidance_models, call_guidance, process_generation
+from utils import v_models, get_model_output, guidance_models, call_guidance, process_generation, check_result_dir
 
 random.seed(939)
 
 bias_name = "selective"
 
 def evaluate_selective(N, evaluator, instructions, reference, responses, eval_gen):
+    this_file_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
+    check_result_dir(os.path.join(this_file_path, f'../n15_evaluations_{bias_name}/'))
     true_order = f"n15_evaluations_{bias_name}/nC2_true_order_{evaluator}.json"
     preferences = f"n15_evaluations_{bias_name}/nC2_preferences_{evaluator}.json"
     stats = f"n15_evaluations_{bias_name}/nC2_statistics_{evaluator}.json"
