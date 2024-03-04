@@ -133,8 +133,6 @@ def evaluate_salience(results_dict):
     pairs = results_dict['order']['true_order']
     lb = find_length_bias(pairs, responses)
 
-    storage_dir = f'n15_evaluations_salience'
-    check_result_dir(storage_dir)
     valid = lb[0]
     short = lb[1]
     long = lb[2]

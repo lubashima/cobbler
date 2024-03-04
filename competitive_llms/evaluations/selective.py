@@ -14,9 +14,6 @@ random.seed(939)
 bias_name = "selective"
 
 def evaluate_selective(N, evaluator, instructions, reference, responses, eval_gen, tokenizer):
-    results_dir = f"n15_evaluations_{bias_name}"
-    check_result_dir(results_dir)
-    
     selection_count = 0
     valid_responses = 0
     

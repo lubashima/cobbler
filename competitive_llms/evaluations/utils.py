@@ -160,6 +160,23 @@ Do not provide any additional text or explanation:
 
 ### Response:'''
 
+def uniform_prompt_func_less(instruction, reference, input):
+    return f'''### Instruction: Which system's answer is better?
+
+The question is: {instruction}
+
+```
+{input}
+```
+
+Please respond in the following format strictly:
+
+System _ is better
+
+Do not provide any additional text or explanation:
+
+### Response:'''
+
 guidance_uniform_chat = '''{{#system~}}
 You are a helpful assistant.
 {{~/system}}
@@ -273,6 +290,23 @@ def uniform_prompt_func_compassion(instruction, reference, input):
 
 The instruction is: {instruction}
 The reference is: {reference}  
+
+```
+{input}
+```
+
+Please respond in the following format strictly:
+
+Model _ is better.
+
+Do not provide any additional text or explanation:
+
+### Response:'''
+
+def uniform_prompt_func_compassion_less(instruction, reference, input):
+    return f'''### Instruction: Which model's answer is better?
+
+The question is: {instruction}
 
 ```
 {input}
