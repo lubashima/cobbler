@@ -458,3 +458,17 @@ System _ is better
 Do not provide any additional text or explanation and do not let the expectation to influence your answer:
 {{gen 'preference' temperature=0}}
 '''
+
+def generate_responses(inputs, model, tokenizer):
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    tokenized_inputs = tokenizer(inputs, return_tensors='pt')
+    tokenized_inputs = tokenized_inputs.to(device)
+
+    with torch.no_grad():
+        outputs = model.generate(tokenized_inputs.input_ids, do_sample=False, temperature=0.0, repetition_penalty=1.2)
+    decoded_outputs = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    all_results = []
+    for decoded_output in decoded_outputs:
+        result = {'generation': decoded_output}
+        all_results.append(result)
+    return all_results

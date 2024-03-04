@@ -10,19 +10,20 @@ import json
 import random
 import itertools
 
-from model_configs import model_configs
-from utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, guidance_models, get_guidance_model
+from .model_configs import model_configs
+from .utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, guidance_models, get_guidance_model
 
-from order import evaluate_order
-from bandwagon import evaluate_bandwagon
-from compassion import evaluate_compassion
-from selective import evaluate_selective
-from salience import evaluate_salience
-from distraction import evaluate_distraction
-from frequency import evaluate_frequency
+from .order import evaluate_order
+from .bandwagon import evaluate_bandwagon
+from .compassion import evaluate_compassion
+from .selective import evaluate_selective
+from .salience import evaluate_salience
+from .distraction import evaluate_distraction
+from .frequency import evaluate_frequency
 
-sys.path.append('../talkative-llm')
-from talkative_llm.llm import get_supported_llm
+# sys.path.append('../talkative-llm')
+# from talkative_llm.llm import get_supported_llm
+from ...talkative_llm.talkative_llm.llm import get_supported_llm
 
 import yaml
 import random
@@ -88,13 +89,13 @@ def read_json_file(file):
         return json.loads(response)
 
 def main(batch, bias):
-    with open('../competitive-llms/datasets/llm_preference_evalset.json', 'r') as file:
+    with open('../competitive_llms/datasets/llm_preference_evalset.json', 'r') as file:
         data = file.read()
         dataset = json.loads(data)
 
     instructions = [data['instruction'] for data in dataset]
     references = [data['reference'] for data in dataset]
-    responses = read_json_file("../competitive-llms/n15_responses/full_n15_model_generations.json")[0]
+    responses = read_json_file("../competitive_llms/n15_responses/full_n15_model_generations.json")[0]
     
     # Batch 1
     if batch == 0:

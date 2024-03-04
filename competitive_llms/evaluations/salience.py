@@ -5,7 +5,7 @@ import nltk
 nltk.download('punkt')
 
 from nltk.tokenize import word_tokenize
-from utils import check_result_dir
+from .utils import check_result_dir
 
 import json
 
@@ -79,56 +79,71 @@ def read_json_file(file):
         response = "[" + response + "]"
         return json.loads(response)
 
-def extract_valid_responses(path):
-    with open(path) as file:
+# def extract_valid_responses(path):
+#     with open(path) as file:
+#         lines = file.readlines()
+
+#     valid_responses_line = [line for line in lines if 'Valid responses' in line]
+#     if valid_responses_line:
+#         valid_responses = valid_responses_line[0].split(':')[1].strip()
+#         return int(valid_responses)
+#         # print(valid_responses)
+#     else:
+#         print("Valid responses line not found in the file.")
+    
+#     return None
+
+def organize_data(file_path):
+    nested_arrays = []
+    current_array = []
+
+    with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    valid_responses_line = [line for line in lines if 'Valid responses' in line]
-    if valid_responses_line:
-        valid_responses = valid_responses_line[0].split(':')[1].strip()
-        return int(valid_responses)
-        # print(valid_responses)
-    else:
-        print("Valid responses line not found in the file.")
-    
-    return None
+        for line in lines:
+            line = line.strip()
 
-def evaluate_salience(model, mode="nC2"):
-    print(mode)
-    if mode == "size":
-        result_dir = f"n15_evaluations_order/_size/"
-        check_result_dir(result_dir)
-        print(model)
-        stats_path = f'n15_evaluations_order/_size/nC2_statistics_{model}.json'
-        valid_responses = extract_valid_responses(stats_path)
-        to_path = f'n15_evaluations_order/_size/nC2_true_order_{model}.json'
-        if 'llamav2' in model:
-            responses = read_json_file(os.path.join(os.path.realpath(__file__), "../n15_responses/full_n15_model_generations_llamav2.json"))[0]
-        else:
-            responses = read_json_file(os.path.join(os.path.realpath(__file__), "../n15_responses/full_n15_model_generations_llamav2.json"))[0]
-    else:
-        result_dir = f"n15_evaluations_order/_official/"
-        check_result_dir(result_dir)
-        # stats_path = f'n15_evaluations_order/_official/{model}/{mode}_statistics_{model}.json'
-        stats_path = f'n15_evaluations_order/{mode}_statistics_{model}.json'
-        valid_responses = extract_valid_responses(stats_path)
-        this_file_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
-        responses = read_json_file(os.path.join(this_file_path, "../n15_responses/full_n15_model_generations.json"))[0]
-        
-        to_path = f'n15_evaluations_order/{mode}_true_order_{model}.json'
-        check_result_dir(os.path.join(this_file_path, '..', f'n15_evaluations_order/_official/{model}/'))
-    pairs = organize_data(os.path.join(this_file_path, '..', to_path))    
+            if not line:
+                # Treat line breaks as separate arrays
+                if current_array:
+                    nested_arrays.append(current_array)
+                    current_array = []
+                continue
+
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError:
+                # Skip lines that are not valid JSON objects
+                continue
+
+            current_array.append(data)
+
+    if current_array:
+        # Append the last array if it's not empty
+        nested_arrays.append(current_array)
+
+    return nested_arrays
+
+def evaluate_salience(results_dict):
+    salience_results_dict = {}
+    valid_responses = results_dict['order']['stats']['valid_responses_count']
+    this_file_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
+    responses = read_json_file(os.path.join(this_file_path, "../n15_responses/full_n15_model_generations_test.json"))[0]
+    
+    pairs = results_dict['order']['true_order']
     lb = find_length_bias(pairs, responses)
 
     storage_dir = f'n15_evaluations_salience'
-    check_result_dir(os.path.join(this_file_path, '..', storage_dir))
-    with open(f'n15_evaluations_salience/{model}_salience_bias.json', "w") as lob:
-        valid = lb[0]
-        short = lb[1]
-        long = lb[2]
-        
-        statistics = "Valid responses: " + str(valid) + "\nRetention Percentage: " + str(valid / (valid_responses + 1e-6)) + "\nShort Bias: " + str(short / valid) + "\nLong Bias: " + str(long / valid)
-        lob.write(statistics)
+    check_result_dir(storage_dir)
+    valid = lb[0]
+    short = lb[1]
+    long = lb[2]
+    salience_results_dict['valid_responses_count'] = valid
+    salience_results_dict['retention_percentage'] = valid / (valid_responses + 1e-6)
+    salience_results_dict['short_bias'] = short / valid
+    salience_results_dict['long_bias'] = long / valid
+
+    return salience_results_dict
     
 def main(arg1, arg2):
     evaluate_salience(arg1, arg2)

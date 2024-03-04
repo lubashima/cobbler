@@ -5,23 +5,23 @@ import itertools
 from math import comb
 import re
 
-from utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, process_generation, call_guidance, guidance_models
-from utils import guidance_uniform_chat_distraction, uniform_prompt_func_distraction, guidance_uniform_completion_distraction
-from utils import v_models, get_model_output
+import sys
+sys.path.append("../competitive-llms")
+sys.path.append("../competitive-llms/evaluations")
+
+from .utils import guidance_uniform_chat, uniform_prompt_func, guidance_uniform_completion, process_generation, call_guidance, guidance_models, uniform_prompt_bandwagon, set_percent
+from .utils import process_generation, call_guidance, guidance_models, uniform_prompt_bandwagon
+from .utils import v_models, get_model_output
 
 random.seed(939)
 
-bias_name = "frequency"
-
-def evaluate_frequency(N, evaluator, instructions, reference, responses, eval_gen):
-    true_order = f"n15_evaluations_{bias_name}/nC2_true_order_{evaluator}.json"
-    preferences = f"n15_evaluations_{bias_name}/nC2_preferences_{evaluator}.json"
-    stats = f"n15_evaluations_{bias_name}/nC2_statistics_{evaluator}.json"
-    log_responses = f"n15_evaluations_{bias_name}/nC2_eval_gens_order_{evaluator}.json"
+def evaluate_bandwagon(N, evaluator, instructions, reference, responses, eval_gen):
+    true_order = f"n15_evaluations_bandwagon/nC2_true_order_{evaluator}.json"
+    preferences = f"n15_evaluations_bandwagon/nC2_preferences_{evaluator}.json"
+    stats = f"n15_evaluations_bandwagon/nC2_statistics_{evaluator}.json"
+    log_responses = f"n15_evaluations_bandwagon/nC2_eval_gens_bias_{evaluator}.json"
     
-    frequency_bias = 0
-    me_bias = 0
-    me_compared = 0    
+    bandwagon_count = 0
     valid_responses = 0
     consistency = 0
         
@@ -45,30 +45,21 @@ def evaluate_frequency(N, evaluator, instructions, reference, responses, eval_ge
                 model1, model2 = combination
                 
                 models = [model1, model2]
-                if evaluator in models:
-                    me_compared += 1
+                order = ["System Star", "System Square"]
                 
-                order = {"System Star": model1, "System Square": model2}
+                bandwagon_st = "System Star"
+                bandwagon_sq = "System Square"
                 
+                # shuffle the models for certain bias tests
+                random.shuffle(models)
+                response1, response2 = responses[models[0]][index],  responses[models[1]][index]
                 
-                star_mix = ["System Star", "System Star", "System Star", "System Square"]
-                square_mix = ["System Square", "System Square", "System Square", "System Star"]
-                # mix = random.choice([star_mix, square_mix])
+                inp = order[0] + ": " + response1 + "\n" + order[1] + ": " + response2
+                percent = random.randint(60, 90)
+                set_percent(percent)
                 
-                random.shuffle(star_mix)
-                random.shuffle(square_mix)
-                
-                response1, response2 = responses[order["System Star"]][index], responses[order['System Square']][index]
-                
-                inp = star_mix[0] + ": " + responses[order[star_mix[0]]][index]
-                val_inp = square_mix[0] + ": " + responses[order[square_mix[0]]][index]
-                
-                for l in range(1, len(star_mix)):
-                    inp += "\n" + star_mix[l] + ": " + responses[order[star_mix[l]]][index]
-                    val_inp += "\n" + square_mix[l] + ": " + responses[order[square_mix[l]]][index]
-                
-                prompt = uniform_prompt_func(instructions[index], reference[index], inp)
-                val_prompt = uniform_prompt_func(instructions[index], reference[index], val_inp)
+                prompt = uniform_prompt_bandwagon(instructions[index], reference[index], inp, bandwagon_st)
+                val_prompt = uniform_prompt_bandwagon(instructions[index], reference[index], inp, bandwagon_sq)
                 
                 if evaluator != "random":
                     if evaluator not in guidance_models and evaluator not in v_models:
@@ -80,14 +71,14 @@ def evaluate_frequency(N, evaluator, instructions, reference, responses, eval_ge
                         validation = get_model_output(evaluator, eval_gen, val_prompt)
                     else:
                         # prompter 
-                        evaluation = call_guidance(eval_gen, instruction=instructions[index], input=inp, reference=reference[index])
-                        validation = call_guidance(eval_gen, instruction=instructions[index], input=val_inp, reference=reference[index])
+                        evaluation = call_guidance(eval_gen, instruction=instructions[index], input=inp, reference=reference[index], biasing=bandwagon_st, bandwagon_percent=percent)
+                        validation = call_guidance(eval_gen, instruction=instructions[index], input=inp, reference=reference[index], biasing=bandwagon_sq, bandwagon_percent=percent)
                 else:
-                    evaluation = random.choice(star_mix)
-                    validation = random.choice(square_mix)
+                    evaluation = random.choice(order)
+                    validation = random.choice(order)
 
                 preference = process_generation(evaluation, instructions[index], reference[index], inp, response1, response2)                
-                val_preference = process_generation(validation, instructions[index], reference[index], val_inp, response1, response2)
+                val_preference = process_generation(validation, instructions[index], reference[index], inp, response1, response2)
                 
                 if count % 50 == 0:
                     lr.write("========================Generation for [" + ", ".join(models) + f"] for instance {index} ============================\n")
@@ -107,24 +98,16 @@ def evaluate_frequency(N, evaluator, instructions, reference, responses, eval_ge
                 
                 if pf == "System Star":
                     rankings[models[0]] += 1
-                    # check for order bias 
+                    # check for bandwagon bias 
                     if val == "System Square":
-                        frequency_bias += 1
-                        models.append("frequency")
-                    # needs to have no order bias to validate me bias
-                    # if val is invalid response, can validate post inference with inconsistent tag
-                    elif models[0] == evaluator:
-                        me_bias += 1
-                    # log the true order
+                        bandwagon_count += 1
+                        models.append("bandwagon")
                     txo.write(json.dumps({"model": models[0], "combination": models}) + "\n")
                 elif pf == "System Square":
                     rankings[models[1]] += 1    
-                    # check for order bias
                     # if val == "System Star":
-                    #     frequency_bias += 1  
-                    #     models.append("frequency")
-                    if models[1] == evaluator:
-                        me_bias += 1  
+                    #     # bandwagon_count += 1  
+                    #     models.append("bandwagon")
                     txo.write(json.dumps({"model": models[1], "combination": models}) + "\n")
                 else:
                     txo.write(json.dumps({"model": "Invalid response", "combination": models}) + "\n")
@@ -133,9 +116,7 @@ def evaluate_frequency(N, evaluator, instructions, reference, responses, eval_ge
             pw.write(json.dumps(rankings) + "\n") 
             
         total_comparisons = N * comb(len(keys), 2)
-        wr.write("Frequency bias: " + str(frequency_bias / total_comparisons) + "\n")
-        # wr.write("Me bias: " + str(me_bias / me_compared) + "\n")    
+        wr.write("Bandwagon percentage: " + str(bandwagon_count / total_comparisons) + "\n")
+        wr.write("Bandwagon count: " + str(bandwagon_count) + "\n") 
         wr.write("Valid response percentage: " + str(valid_responses / total_comparisons) + "\n") 
         wr.write("Valid responses: " + str(valid_responses) + "\n")      
-        wr.write("Consistency percentage: " + str(consistency / total_comparisons) + "\n")
-        wr.write("Consistency count: " + str(consistency) + "\n")
