@@ -137,9 +137,10 @@ def evaluate_salience(results_dict):
     short = lb[1]
     long = lb[2]
     salience_results_dict['valid_responses_count'] = valid
-    salience_results_dict['retention_percentage'] = valid / (valid_responses + 1e-6)
-    salience_results_dict['short_bias'] = short / valid
-    salience_results_dict['long_bias'] = long / valid
+    if valid:
+        salience_results_dict['retention_percentage'] = valid / (valid_responses + 1e-6)
+        salience_results_dict['short_bias'] = short / valid
+        salience_results_dict['long_bias'] = long / valid
 
     return salience_results_dict
     
