@@ -52,7 +52,8 @@ def evaluate_order(N, evaluator, instructions, reference, responses, eval_gen, t
         random.shuffle(item_combinations)
         
         # Iterate over combinations
-        for combination in item_combinations:
+        print(f"Instance {index}")
+        for combination in tqdm(item_combinations):
             true_order_list = []
             count += 1
             model1, model2 = combination

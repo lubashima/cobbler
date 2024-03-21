@@ -499,7 +499,7 @@ def generate_responses(inputs, model, tokenizer):
     tokenized_inputs = tokenized_inputs.to(device)
 
     with torch.no_grad():
-        outputs = model.generate(tokenized_inputs.input_ids, do_sample=False, temperature=0.0, repetition_penalty=1.2)
+        outputs = model.generate(tokenized_inputs.input_ids, max_new_tokens=32, do_sample=False, temperature=0.0, repetition_penalty=1.0)
     decoded_outputs = tokenizer.batch_decode(outputs, skip_special_tokens=True)
     all_results = []
     for decoded_output in decoded_outputs:
